@@ -1,0 +1,21 @@
+{{- /*
+  spoiler — a collapsible block for CTF solutions, flags and other things the
+  reader may want to work out first. It is a native <details> element, so it
+  needs no JavaScript and is keyboard accessible.
+
+  Usage (the body is rendered as Markdown):
+    {{< spoiler title="Show the flag" >}}
+    `FLAG{n0t_s0_s3cr3t}`
+    {{< /spoiler >}}
+
+  Parameters:
+    title  optional summary text, default "Spoiler — click to reveal"
+    open   optional, any non-empty value renders the block expanded
+*/ -}}
+{{- $title := .Get "title" | default "Spoiler — click to reveal" -}}
+<details class="spoiler"{{ if .Get "open" }} open{{ end }}>
+  <summary>{{ $title }}</summary>
+  <div class="spoiler-body">
+    {{- .Inner | strings.TrimSpace | .Page.RenderString (dict "display" "block") -}}
+  </div>
+</details>

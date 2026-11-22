@@ -1,0 +1,8 @@
+{{- /* Compact "Part 2 of 3 · Series name" label, meant for the top of a post. */ -}}
+{{- with partial "cc/series-info.html" . -}}
+<p class="series-label">
+  <span class="series-part">Part {{ .number }} of {{ .total }}</span>
+  <span class="series-sep" aria-hidden="true">·</span>
+  <a class="series-name" href="{{ .term.RelPermalink }}">{{ .term.LinkTitle }}</a>
+</p>
+{{- end -}}

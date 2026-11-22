@@ -1,0 +1,11 @@
+{{- /*
+  The /search/ page. Create it with content/search.md and `layout: search`.
+  The visual theme's baseof wraps this block.
+*/ -}}
+{{ define "main" }}
+<article class="search-page">
+  <h1>{{ .Title }}</h1>
+  {{ .Content }}
+  {{ partial "cc/search.html" . }}
+</article>
+{{ end }}

@@ -1,0 +1,41 @@
+{{- /*
+  cve — a badge linking a CVE identifier to its NVD entry.
+
+  Usage:
+    {{< cve id="CVE-2021-44228" score="10.0" name="Log4Shell" >}}
+
+  Parameters:
+    id     required, e.g. CVE-2021-44228 (format is validated)
+    score  optional CVSS v3 base score, 0.0 – 10.0
+    name   optional nickname shown after the id
+
+  The severity (and the cve-<severity> class) follows the CVSS v3 ranges:
+    0.1–3.9 low · 4.0–6.9 medium · 7.0–8.9 high · 9.0–10.0 critical
+*/ -}}
+{{- $id := .Get "id" | default (.Get 0) | upper | strings.TrimSpace -}}
+{{- if not (findRE `^CVE-\d{4}-\d{4,}$` $id) -}}
+  {{- errorf "cve: %q is not a valid CVE id (expected CVE-YYYY-NNNN) at %s" $id .Position -}}
+{{- end -}}
+
+{{- $severity := "unrated" -}}
+{{- $score := "" -}}
+{{- with .Get "score" -}}
+  {{- $value := float . -}}
+  {{- if or (lt $value 0.0) (gt $value 10.0) -}}
+    {{- errorf "cve: score %v is outside 0.0–10.0 at %s" . $.Position -}}
+  {{- end -}}
+  {{- $score = printf "%.1f" $value -}}
+  {{- if ge $value 9.0 -}}{{- $severity = "critical" -}}
+  {{- else if ge $value 7.0 -}}{{- $severity = "high" -}}
+  {{- else if ge $value 4.0 -}}{{- $severity = "medium" -}}
+  {{- else if gt $value 0.0 -}}{{- $severity = "low" -}}
+  {{- else -}}{{- $severity = "none" -}}
+  {{- end -}}
+{{- end -}}
+
+<a class="cve cve-{{ $severity }}" href="https://nvd.nist.gov/vuln/detail/{{ $id }}" rel="noopener noreferrer" target="_blank">
+  <span class="cve-id">{{ $id }}</span>
+  {{- with .Get "name" }} <span class="cve-name">{{ . }}</span>{{ end -}}
+  {{- if $score }} <span class="cve-score" title="CVSS v3 base score">{{ $score }}</span>
+  <span class="cve-severity">{{ title $severity }}</span>{{ end -}}
+</a>{{- /* chomp the trailing newline: no stray space before punctuation */ -}}

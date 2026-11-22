@@ -1,0 +1,45 @@
+{{- /*
+  Third-party scripts. Call it at the very end of <body>, after the page
+  content, so flags set while rendering the content are visible here.
+
+  - KaTeX + auto-render on pages with `math: true`. The Goldmark passthrough
+    extension leaves $...$, $$...$$, \(...\) and \[...\] untouched in the HTML;
+    auto-render typesets them in the browser (code blocks are skipped).
+  - Mermaid on pages that contain a ```mermaid block (the render hook sets the
+    hasMermaid flag while the content renders, which is why this partial must
+    come after the content). The look comes from the theme's
+    mermaid-config.html.
+*/ -}}
+{{- if .Params.math -}}
+  {{- with hugo.Data.cdn.katex }}
+<script defer src="{{ .base }}/{{ .js.path }}" integrity="{{ .js.integrity }}" crossorigin="anonymous"></script>
+<script defer src="{{ .base }}/{{ .autorender.path }}" integrity="{{ .autorender.integrity }}" crossorigin="anonymous"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  if (typeof renderMathInElement !== "function") return;
+  renderMathInElement(document.body, {
+    delimiters: [
+      { left: "$$", right: "$$", display: true },
+      { left: "\\[", right: "\\]", display: true },
+      { left: "$", right: "$", display: false },
+      { left: "\\(", right: "\\)", display: false }
+    ],
+    throwOnError: false
+  });
+});
+</script>
+  {{- end }}
+{{- end -}}
+
+{{- if .Store.Get "hasMermaid" -}}
+  {{- with hugo.Data.cdn.mermaid }}
+<script defer src="{{ .base }}/{{ .js.path }}" integrity="{{ .js.integrity }}" crossorigin="anonymous"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  if (typeof mermaid !== "object") return;
+  mermaid.initialize(Object.assign({ startOnLoad: false, securityLevel: "strict" }, {{ partial "mermaid-config.html" $ | jsonify | safeJS }}));
+  mermaid.run({ nodes: document.querySelectorAll("pre.mermaid") });
+});
+</script>
+  {{- end }}
+{{- end -}}

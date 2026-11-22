@@ -1,0 +1,5 @@
+<footer class="site-footer">
+  <p><span class="dim">#</span> &copy; {{ now.Year }} {{ site.Title }} <span class="dim">|</span>
+    {{ with site.Home.OutputFormats.Get "rss" }}<a href="{{ .RelPermalink }}">rss</a>{{ end }}
+    <span class="dim">|</span> <span class="dim">exit 0</span></p>
+</footer>

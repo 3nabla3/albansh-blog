@@ -1,0 +1,28 @@
+# Third-party scripts loaded from jsDelivr, pinned to an exact version and
+# protected by Subresource Integrity. They are only requested on pages that
+# need them (KaTeX: `math: true`; Mermaid: a ```mermaid code block).
+#
+# To upgrade: change the version in `base`, download each file and recompute
+#   openssl dgst -sha384 -binary <file> | openssl base64 -A
+# then prefix the result with "sha384-". The browser refuses a file whose hash
+# does not match, so a wrong value shows up immediately as missing math/diagrams.
+
+[katex]
+version = "0.19.1"
+base = "https://cdn.jsdelivr.net/npm/katex@0.19.1/dist"
+  [katex.css]
+  path = "katex.min.css"
+  integrity = "sha384-WwGtaC6ywCHxA5cstpj/3+xIZvTez8dq2IcBQaXRkenHZ7FVVq1ZROtURwfbtTlG"
+  [katex.js]
+  path = "katex.min.js"
+  integrity = "sha384-a1WQdjRj162i159OYq041X6I4K8NenkrI09LlPmiHg0YOb7CR+wJOraXwK9abpnE"
+  [katex.autorender]
+  path = "contrib/auto-render.min.js"
+  integrity = "sha384-bjyGPfbij8/NDKJhSGZNP/khQVgtHUE5exjm4Ydllo42FwIgYsdLO2lXGmRBf5Mz"
+
+[mermaid]
+version = "12.2.0"
+base = "https://cdn.jsdelivr.net/npm/mermaid@12.2.0/dist"
+  [mermaid.js]
+  path = "mermaid.min.js"
+  integrity = "sha384-8xUhuLNMjW/cI2Dacg3DR4WliYznvIg0LVG1stctThKD/YVrJFI9TNCFxft5NYgp"

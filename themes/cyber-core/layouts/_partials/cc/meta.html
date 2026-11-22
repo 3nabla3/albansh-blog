@@ -1,0 +1,27 @@
+{{- /*
+  The <head> basics every theme needs. Call it first inside <head>.
+
+  - charset, viewport, <title>, description, canonical URL
+  - the RSS feed link
+  - the stylesheet: css/main.css and css/syntax.css from the theme's assets/
+    are concatenated, minified and fingerprinted into one file (with an
+    integrity attribute). Either file may be absent.
+
+  A theme adds its own extras (theme-color, fonts, scripts) afterwards, then
+  calls cc/head.html for the KaTeX stylesheet.
+*/ -}}
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ if .IsHome }}{{ site.Title }}{{ else }}{{ .Title }} · {{ site.Title }}{{ end }}</title>
+<meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ site.Params.description }}{{ end }}">
+<link rel="canonical" href="{{ .Permalink }}">
+{{ with site.Home.OutputFormats.Get "rss" -}}
+<link rel="alternate" type="{{ .MediaType.Type }}" href="{{ .Permalink }}" title="{{ site.Title }}">
+{{ end -}}
+{{- $styles := slice -}}
+{{- with resources.Get "css/main.css" }}{{ $styles = $styles | append . }}{{ end -}}
+{{- with resources.Get "css/syntax.css" }}{{ $styles = $styles | append . }}{{ end -}}
+{{- with $styles -}}
+  {{- $css := . | resources.Concat "css/bundle.css" | minify | fingerprint -}}
+  <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}">
+{{ end -}}

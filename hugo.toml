@@ -1,0 +1,119 @@
+baseURL = 'https://www.alban.sh/'
+locale = 'en-us'
+title = 'Alban.sh'
+
+theme = ['terminal-standalone']
+
+# ---------------------------------------------------------------------------
+# Site parameters (read by the themes through `site.Params`)
+# ---------------------------------------------------------------------------
+[params]
+  description = 'Notes on offensive and defensive security: exploits, reversing, cryptography and incident response.'
+  # Section(s) listed on the home page and used for "related posts".
+  mainSections = ['posts']
+
+# ---------------------------------------------------------------------------
+# Content model
+# ---------------------------------------------------------------------------
+[taxonomies]
+  tag = 'tags'
+  category = 'categories'
+  series = 'series'
+
+# 3 per page so that pagination is visible with only five sample posts.
+[pagination]
+  pagerSize = 3
+
+# The home page also publishes a JSON search index (`index.json`), consumed by
+# the client-side search on /search/.
+[outputs]
+  home = ['html', 'rss', 'json']
+
+# ---------------------------------------------------------------------------
+# Markdown rendering
+# ---------------------------------------------------------------------------
+[markup]
+  [markup.highlight]
+    # Emit CSS classes instead of inline styles: every theme ships its own
+    # Chroma stylesheet that matches its palette.
+    noClasses = false
+    # Line numbers are opt-in per block: ```python {linenos=true}
+    lineNos = false
+    lineNumbersInTable = false
+    guessSyntax = false
+    tabWidth = 4
+
+  [markup.tableOfContents]
+    startLevel = 2
+    endLevel = 3
+    ordered = false
+
+  [markup.goldmark]
+    [markup.goldmark.parser]
+      # A standalone image is not wrapped in <p>, so the image render hook can
+      # turn it into a <figure> (see cyber-core's render-image.html).
+      wrapStandAloneImageWithinParagraph = false
+    [markup.goldmark.extensions]
+      # Keep $...$ and $$...$$ untouched by the Markdown parser so that KaTeX
+      # (loaded only on pages with `math: true`) can typeset them in the browser.
+      [markup.goldmark.extensions.passthrough]
+        enable = true
+        [markup.goldmark.extensions.passthrough.delimiters]
+          block = [['\[', '\]'], ['$$', '$$']]
+          inline = [['\(', '\)'], ['$', '$']]
+
+# ---------------------------------------------------------------------------
+# Image processing defaults (used by the image render hook)
+# ---------------------------------------------------------------------------
+[imaging]
+  resampleFilter = 'Lanczos'
+  [imaging.jpeg]
+    quality = 80
+  [imaging.webp]
+    quality = 80
+
+# ---------------------------------------------------------------------------
+# Related content: a shared series or tag is a strong signal.
+# ---------------------------------------------------------------------------
+[related]
+  includeNewer = true
+  threshold = 20
+  toLower = true
+  [[related.indices]]
+    name = 'series'
+    weight = 100
+  [[related.indices]]
+    name = 'tags'
+    weight = 80
+  [[related.indices]]
+    name = 'categories'
+    weight = 40
+
+# ---------------------------------------------------------------------------
+# Navigation
+# ---------------------------------------------------------------------------
+[menus]
+  [[menus.main]]
+    name = 'Home'
+    pageRef = '/'
+    weight = 10
+  [[menus.main]]
+    name = 'Posts'
+    pageRef = '/posts'
+    weight = 20
+  [[menus.main]]
+    name = 'Series'
+    pageRef = '/series'
+    weight = 30
+  [[menus.main]]
+    name = 'Tags'
+    pageRef = '/tags'
+    weight = 40
+  [[menus.main]]
+    name = 'Search'
+    pageRef = '/search'
+    weight = 50
+  [[menus.main]]
+    name = 'About'
+    pageRef = '/about'
+    weight = 60

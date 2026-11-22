@@ -1,0 +1,10 @@
+{{ define "main" }}
+<h1>{{ .Title }}</h1>
+{{ .Content }}
+<ul class="ls">
+  {{- range (.Paginate .Pages).Pages }}
+    {{ partial "post-summary.html" . }}
+  {{- end }}
+</ul>
+{{ partial "pagination.html" . }}
+{{ end }}

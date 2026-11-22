@@ -1,0 +1,18 @@
+{{- /*
+  Search index (home page, "json" output format → /index.json), read by
+  static/js/search.js. One entry per post of the main sections.
+*/ -}}
+{{- $entries := slice -}}
+{{- range where site.RegularPages "Type" "in" site.Params.mainSections -}}
+  {{- $entries = $entries | append (dict
+    "title" .LinkTitle
+    "url" .RelPermalink
+    "date" (.Date.Format "2006-01-02")
+    "summary" (.Description | default (.Summary | plainify | truncate 200))
+    "tags" (.Params.tags | default slice)
+    "categories" (.Params.categories | default slice)
+    "series" (.Params.series | default slice)
+    "content" (.Plain | htmlUnescape)
+  ) -}}
+{{- end -}}
+{{- $entries | jsonify -}}

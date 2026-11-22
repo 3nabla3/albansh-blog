@@ -1,0 +1,31 @@
+{{- /*
+  One `ls -l` style section of the CV. Takes a dict:
+    label  the real heading, read by screen readers
+    cmd    the shell command shown in the heading bar
+    perm   optional fake permissions, default "-rw-r--r--"
+    items  a list of {title, org, url, when, span, bullets}; title is required, the rest are optional
+  Renders nothing when there are no items.
+*/ -}}
+{{- with .items }}
+<section>
+  <h2 class="cmd" aria-label="{{ $.label }}"><span class="dollar">$</span> {{ $.cmd }}</h2>
+  <ul class="ls">
+    {{- range . }}
+    <li class="entry">
+      <span class="perm" aria-hidden="true">{{ $.perm | default "-rw-r--r--" }}</span>
+      <span class="size">{{ .span | default "-" }}</span>
+      <span class="when">{{ .when }}</span>
+      <span class="name">
+        {{- if .url }}<a class="external" href="{{ .url }}" rel="noopener noreferrer" target="_blank">{{ .title }}</a>{{ else }}{{ .title }}{{ end -}}
+        {{- with .org }} <span class="org">@ {{ . }}</span>{{ end -}}
+      </span>
+      {{- with .bullets }}
+      <div class="desc prose"><ul>
+        {{- range . }}<li>{{ . }}</li>{{ end -}}
+      </ul></div>
+      {{- end }}
+    </li>
+    {{- end }}
+  </ul>
+</section>
+{{- end }}

@@ -1,0 +1,22 @@
+{{ define "main" }}
+<section class="motd">
+<pre class="ascii" aria-hidden="true"> _   _ ____
+| \ | |  _ \
+|  \| | |_) |
+| |\  |  __/
+|_| \_|_|</pre>
+  <h1>{{ site.Title }}</h1>
+  <p class="lead">{{ site.Params.description }}</p>
+  {{ .Content }}
+</section>
+
+<section>
+  <h2 class="cmd"><span class="dollar">$</span> ls -lt posts/ | head -3</h2>
+  <ul class="ls">
+    {{- range first 3 (where site.RegularPages "Type" "in" site.Params.mainSections) }}
+      {{ partial "post-summary.html" . }}
+    {{- end }}
+  </ul>
+  <p><a href="{{ "posts/" | relURL }}">[ more: ls posts/ ]</a></p>
+</section>
+{{ end }}

@@ -1,0 +1,17 @@
+{{- /*
+  The search widget: input, live status line and result list. static/js/search.js
+  finds it through [data-search], fetches the JSON index named in data-index
+  and fills .search-results. Results are built with DOM methods (no innerHTML),
+  so indexed text can never inject markup.
+*/ -}}
+{{- $json := site.Home.OutputFormats.Get "json" -}}
+<div class="search" data-search data-index="{{ with $json }}{{ .RelPermalink }}{{ else }}{{ "index.json" | relURL }}{{ end }}">
+  <form class="search-form search-form-page" role="search" action="" method="get">
+    <label class="visually-hidden" for="search-q">Search posts</label>
+    <input id="search-q" type="search" name="q" placeholder="Search posts, tags, code…" autocomplete="off" autofocus>
+  </form>
+  <p class="search-status" role="status" aria-live="polite"></p>
+  <ol class="search-results"></ol>
+  <noscript><p class="search-noscript">Search needs JavaScript. You can also browse the <a href="{{ "tags/" | relURL }}">tags</a> or the <a href="{{ "posts/" | relURL }}">list of posts</a>.</p></noscript>
+</div>
+<script defer src="{{ "js/search.js" | relURL }}"></script>

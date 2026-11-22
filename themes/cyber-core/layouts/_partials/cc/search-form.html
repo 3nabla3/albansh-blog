@@ -1,0 +1,9 @@
+{{- /*
+  A compact search form for the site header. It submits to the search page
+  (?q=…), which runs the query. Works without JavaScript up to that point.
+*/ -}}
+{{- $page := site.GetPage "/search" -}}
+<form class="search-form" role="search" action="{{ with $page }}{{ .RelPermalink }}{{ else }}{{ "search/" | relURL }}{{ end }}" method="get">
+  <label class="visually-hidden" for="site-search-q">Search posts</label>
+  <input id="site-search-q" type="search" name="q" placeholder="Search…" autocomplete="off">
+</form>

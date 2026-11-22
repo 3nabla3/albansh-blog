@@ -1,0 +1,49 @@
+{{- /*
+  The about page / CV (content/about.md, `layout: about`). The text comes from the
+  front matter: name, role, location, links, skills, experience, education, projects.
+  The Markdown body is the short bio. Sections with no data are left out.
+*/ -}}
+{{ define "main" }}
+<article class="cv">
+  <header class="frontmatter">
+    <h1>{{ .Params.name | default .Title }}</h1>
+    <dl class="meta">
+      {{- with .Params.role }}
+      <div><dt>role</dt><dd>{{ . }}</dd></div>
+      {{- end }}
+      {{- with .Params.location }}
+      <div><dt>location</dt><dd>{{ . }}</dd></div>
+      {{- end }}
+      {{- with .Params.links }}
+      <div><dt>links</dt><dd>
+        {{- range $i, $link := . }}{{ if $i }} {{ end }}<a class="external" href="{{ $link.url }}" rel="noopener noreferrer" target="_blank">{{ $link.name }}</a>{{ end -}}
+      </dd></div>
+      {{- end }}
+    </dl>
+  </header>
+
+  {{- with .Content }}
+  <section>
+    <h2 class="cmd" aria-label="About me"><span class="dollar">$</span> whoami</h2>
+    <div class="prose">{{ . }}</div>
+  </section>
+  {{- end }}
+
+  {{- with .Params.skills }}
+  <section>
+    <h2 class="cmd" aria-label="Skills"><span class="dollar">$</span> cat skills.yml</h2>
+    <dl class="meta">
+      {{- range . }}
+      <div><dt>{{ .group }}</dt><dd><ul class="terms">
+        {{- range .items }}<li><span>{{ . }}</span></li>{{ end -}}
+      </ul></dd></div>
+      {{- end }}
+    </dl>
+  </section>
+  {{- end }}
+
+  {{ partial "cv-section.html" (dict "label" "Experience" "cmd" "ls -l experience/" "items" .Params.experience) }}
+  {{ partial "cv-section.html" (dict "label" "Education" "cmd" "ls -l education/" "items" .Params.education) }}
+  {{ partial "cv-section.html" (dict "label" "Projects" "cmd" "ls -l projects/" "perm" "drwxr-xr-x" "items" .Params.projects) }}
+</article>
+{{ end }}
