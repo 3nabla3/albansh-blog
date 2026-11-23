@@ -4,6 +4,7 @@ date: 2026-11-22
 description: "Walking an Active Directory domain from anonymous SMB access to Administrator by chaining leaked credentials across shares, LDAP descriptions and a backup script, then abusing SeBackupPrivilege to dump the SAM."
 tags: ["active-directory", "smb", "ldap", "password-spraying", "sebackupprivilege", "pass-the-hash", "windows"]
 toc: true
+draft: true
 ---
 
 This writeup covers an easy Windows Active Directory target. There is no exploit
