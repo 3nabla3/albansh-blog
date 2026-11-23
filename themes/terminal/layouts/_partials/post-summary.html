@@ -1,7 +1,0 @@
-<li class="entry">
-  <span class="perm" aria-hidden="true">-rw-r--r--</span>
-  <span class="size">{{ .ReadingTime }}m</span>
-  <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "Jan 02 2006" }}</time>
-  <a class="name" href="{{ .RelPermalink }}">{{ .LinkTitle }}</a>
-  <span class="desc"># {{ with .Description }}{{ . }}{{ else }}{{ .Summary | plainify | truncate 140 }}{{ end }}</span>
-</li>
