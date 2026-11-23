@@ -1,56 +1,51 @@
 # terminal-standalone
 
-The `terminal` theme with `cyber-core` folded into it, so it needs no second
-theme:
+The theme for alban.sh: a terminal-styled Hugo theme that works on its own,
+with no second theme needed.
 
 ```toml
 theme = ['terminal-standalone']
 ```
 
-It renders the same site as `theme = ['terminal', 'cyber-core']`. Building the
-sample site both ways gives identical pages, apart from the stylesheet's
-fingerprint and the Mermaid loader script (see below).
+## Site configuration it expects
 
-## What is inside
+- `params.mainSections = ['posts']`: the section listed on the home page.
+- `[taxonomies]` with `tag = 'tags'` and `series = 'series'`.
+- `[outputs] home = ['html', 'rss', 'json']`: the JSON search index read by
+  `/search/`.
+- `markup.goldmark.parser.wrapStandAloneImageWithinParagraph = false`, so that
+  a standalone image becomes a `<figure>`.
 
-| From | Files |
+## Front matter
+
+| Key | Effect |
 |---|---|
-| `terminal` | `layouts/` (base, home, page, list, taxonomy, 404, header/footer partials, `mermaid-config.html`) and `assets/css/` |
-| `cyber-core` | `layouts/_shortcodes/`, `layouts/_markup/`, `layouts/_partials/cc/`, `layouts/index.json`, `layouts/search.html`, `data/cdn.toml`, `static/js/search.js` |
+| `description` | Summary in lists and meta tags |
+| `tags`, `series` | Taxonomy links, series navigation, related posts |
+| `toc: true` | Table of contents (h2 and h3) |
+| `math: true` | Loads KaTeX on that page |
 
-The files are copies, trimmed of code that nothing in this theme can reach. The
-one file both themes have is `_partials/mermaid-config.html`; the terminal one
-is kept, as it wins when the two themes are composed. `cyber-core`'s README
-documents the shortcodes, the render hooks and the `cc/` partials.
+## Shortcodes
 
-What was left out:
+- `callout`: highlighted note (`type` is info, tip, warning or danger, plus an
+  optional `title`).
+- `spoiler`: collapsible `<details>` block (`title`, `open`).
+- `cve`: badge linking to NVD (`id`, plus optional `score` and `name`).
 
-- `cc/search-form.html`: no terminal template includes it.
-- The `version` keys in `data/cdn.toml`: nothing reads them, the version is in
-  each `base` URL.
-- In `cc/scripts.html`, the run-time Mermaid hooks (`window.cyberMermaidConfig`
-  and `window.cyberRenderMermaid`): the terminal palette is fixed, so nothing
-  defines or calls them.
-- Branches that cannot differ: the "either stylesheet may be missing" guards in
-  `cc/meta.html`, and the `with` wrappers around `srcset` and the alt text in
-  `render-image.html`.
-- Three CSS rules that style nothing (`.prose em`, `h2.cmd::before`,
-  `.search-result-title::before`).
+Each file in `layouts/_shortcodes/` documents its parameters.
 
-## Keeping it in step
+## Render hooks
 
-The copies do not follow `terminal` or `cyber-core` on their own. After
-changing either, copy the change here, then check that the two setups still
-render the same site. The stylesheet hash is set aside first; the only page
-allowed to differ is one with a Mermaid diagram, whose loader script is shorter
-here:
+- **Images:** resized to WebP with `srcset`. A relative path is looked up as a
+  page resource first, then in `assets/`. A path that matches neither fails
+  the build.
+- **Links:** external links open in a new tab. A relative link that points
+  nowhere fails the build.
+- **Mermaid:** a fenced ` ```mermaid ` block renders as a diagram. Mermaid is
+  loaded only on pages that have one.
 
-```sh
-hugo -t terminal,cyber-core -d /tmp/composed
-hugo -t terminal-standalone -d /tmp/standalone
-for d in composed standalone; do
-  find /tmp/$d -name '*.html' -exec sed -i -E 's/bundle\.min\.[a-f0-9]+\.css/bundle.css/; s/ integrity="sha256-[^"]+"//' {} +
-  rm /tmp/$d/css/bundle.min.*.css
-done
-diff -rq /tmp/composed /tmp/standalone
-```
+## Third-party scripts
+
+KaTeX and Mermaid come from jsDelivr, pinned to exact versions with
+Subresource Integrity hashes in `data/cdn.toml`. That file explains how to
+upgrade them.

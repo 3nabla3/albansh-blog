@@ -93,7 +93,6 @@ img, svg, video { max-width: 100%; height: auto; }
 .site-footer { margin-top: 4rem; padding-top: 1.25rem; border-top: 1px solid var(--line); color: var(--dim); font-size: .9rem; }
 
 /* --- home ------------------------------------------------------------------ */
-.ascii { margin: 1.5rem 0 0; color: var(--amber); line-height: 1.15; font-size: 1rem; text-shadow: 0 0 8px rgba(255, 176, 0, .4); }
 .lead { color: var(--dim); font-size: 1.15rem; max-width: 60ch; }
 /* Home sections are separated by a rule and a command bar, so each one starts visibly. */
 .motd { padding-bottom: 1rem; }

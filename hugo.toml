@@ -17,7 +17,6 @@ theme = ['terminal-standalone']
 # ---------------------------------------------------------------------------
 [taxonomies]
   tag = 'tags'
-  category = 'categories'
   series = 'series'
 
 # 3 per page so that pagination is visible with only five sample posts.
@@ -51,7 +50,7 @@ theme = ['terminal-standalone']
   [markup.goldmark]
     [markup.goldmark.parser]
       # A standalone image is not wrapped in <p>, so the image render hook can
-      # turn it into a <figure> (see cyber-core's render-image.html).
+      # turn it into a <figure> (see the theme's render-image.html).
       wrapStandAloneImageWithinParagraph = false
     [markup.goldmark.extensions]
       # Keep $...$ and $$...$$ untouched by the Markdown parser so that KaTeX
@@ -85,9 +84,6 @@ theme = ['terminal-standalone']
   [[related.indices]]
     name = 'tags'
     weight = 80
-  [[related.indices]]
-    name = 'categories'
-    weight = 40
 
 # ---------------------------------------------------------------------------
 # Navigation
