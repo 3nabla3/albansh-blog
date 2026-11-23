@@ -1,24 +1,15 @@
 ---
 title: "From Guest SMB Access to Domain Admin: Credential Hopping Through File Shares"
 date: 2026-11-22
-description: "Walking an Active Directory domain from anonymous SMB access to Administrator by chaining leaked credentials across shares, LDAP descriptions and a backup script, then abusing SeBackupPrivilege to dump the SAM."
+description: "Lateral movement in an AD domain by chaining leaked credentials, then abusing SeBackupPrivilege"
 tags: ["active-directory", "smb", "ldap", "password-spraying", "sebackupprivilege", "pass-the-hash", "windows"]
 toc: true
 draft: true
 ---
 
-This writeup covers an easy Windows Active Directory target. There is no exploit
-in the whole chain. Every step comes from a credential that someone left in
-plain sight: a welcome note on an HR share, a password in an LDAP description
-field, and a hard-coded secret in a backup script. The last account holds
-`SeBackupPrivilege`, which lets us copy the registry hives and pass the
-Administrator hash.
-
-{{< callout type="info" title="Redactions" >}}
-Every password, NT hash and flag has been replaced with a placeholder such as
-`<DEFAULT_PASSWORD>` or `<REDACTED_NT_HASH>`, and the screenshots are blurred
-to match.
-{{< /callout >}}
+In this writeup, we explore how leaked credentials can be used to move laterally
+across a domain. We end up getting an account with `SeBackupPrivilege`,
+which lets us dump the Administrator hash from the registry hives.
 
 ## Attack path at a glance
 
@@ -35,8 +26,8 @@ to match.
 
 ### Port scan
 
-A service scan shows a typical domain controller: DNS, Kerberos, LDAP/GC, SMB
-and WinRM on 5985. The domain is `cicada.htb` and the host is `CICADA-DC`.
+The initial nmap scan shows a standard domain controller, with the domain
+being `cicada.htb`.
 
 ```console
 ┌──(kali㉿kali)-[~/Desktop]
@@ -65,14 +56,14 @@ Nmap done: 1 IP address (1 host up) scanned in 50.22 seconds
 
 ![Nmap service scan of the domain controller](images/smb-shares-to-domain-admin/01-nmap.png)
 
-WinRM (5985) is worth remembering: any account in *Remote Management Users*
-will get a shell from it.
+WinRM (5985) is common in CTFs. If we get a user that is in the _Remote Management Users_
+group we can connect to that service with `evil-winrm` to get a shell.
 
 ### SMB as guest
 
-The `guest` account is enabled with an empty password, and it can read the
-non-default `HR` share. The `DEV` share is listed too, but guest cannot read it
-yet.
+Since the DC has the SMB port open, we can try to list the shares
+using the default guest account with no password. Only the `HR` share
+is readable.
 
 ```console
 ┌──(kali㉿kali)-[~/Desktop]
@@ -95,8 +86,8 @@ SMB         10.129.87.147   445    CICADA-DC        SYSVOL                      
 
 ## 2. Leaked default password on the HR share
 
-The `HR` share holds a single welcome letter for new hires. It contains the
-default password that every new account is given.
+We find a credential in a message on the HR share. Some user probably forgot to
+change the default password.
 
 ```console
 ┌──(kali㉿kali)-[~/Desktop]
@@ -140,15 +131,14 @@ Cicada Corp
 
 ![Downloading and reading the HR welcome notice](images/smb-shares-to-domain-admin/03-hr-notice.png)
 
-We have a password but no usernames yet.
+We dont have a username yet but we have a password that most likely belongs to someone.
 
 ## 3. Finding users and spraying the default password
 
 ### RID brute force
 
-Guest can query the domain's SAM over `IPC$`. `impacket-lookupsid` walks
-through the RIDs and resolves each one to an account name. Filtering on
-`SidTypeUser` keeps only the user accounts.
+We can use impacket's lookupsid command to list accounts on the domain
+with just guest access.
 
 ```console
 ┌──(kali㉿kali)-[~/Desktop]
@@ -168,8 +158,8 @@ through the RIDs and resolves each one to an account name. Filtering on
 
 ### Password spray
 
-The five human accounts go into a `users` file and get sprayed with the default
-password through Kerberos pre-authentication:
+We place the 5 human accounts into a users file so we can brute force a usernames
+with a single password using `kerbrute`.
 
 ```console
 ┌──(kali㉿kali)-[~/Desktop]
@@ -206,20 +196,18 @@ Version: dev (n/a) - 11/22/26 - Ronnie Flathers @ropnop
 ![Kerbrute password spray](images/smb-shares-to-domain-admin/05-password-spray.png)
 
 {{< callout type="tip" title="Read the errors, not the summary" >}}
-Kerbrute reports **0 successes**, yet `michael.wrightson` returns a different
-error from the others. `KRB_AP_ERR_SKEW` only comes back after the KDC has
-accepted the pre-authentication, so the password is right and the attacker's
-clock is just too far from the DC's. You can fix the clock (`ntpdate` /
-`faketime`) or switch to a protocol that ignores clock skew, such as NTLM over
-LDAP or SMB.
+Kerbrute says that no logins were successful, but looking at the verbose error log
+we see that Michael's account gets a different error message. That's because
+the authentication for Michael succeeded but an extra security check on the
+OS clock blocked the login, but this still indicates that the username + password
+combo is valid.
 {{< /callout >}}
 
 ## 4. Password in an LDAP description
 
-Rather than fixing the clock, the next step uses NTLM over LDAP as
-`michael.wrightson` to list domain users. The `--users` output includes each
-account's `description` attribute, and `david.orelious` has written his
-password there:
+Next we use Michael's creds to enumerate more shares to see if we gained read
+access to one. We notice Michael does not have access to more non-default shares, but we can
+list users' metadata on the LDAP database to find another leaked cred.
 
 ```console
 ┌──(kali㉿kali)-[~/Desktop]
@@ -240,13 +228,13 @@ LDAP        10.129.87.147   389    CICADA-DC        emily.oscars                
 
 ![LDAP user enumeration revealing a password in a description](images/smb-shares-to-domain-admin/06-ldap-users.png)
 
-Any authenticated user can read the `description` attribute, so a secret stored
-there is visible to the whole domain.
+While guest cannot read account descriptions, authenticated users can,
+which means that we were able to leak David's password.
 
 ## 5. Hard-coded credentials on the DEV share
 
-`david.orelious` has read access to the `DEV` share, which guest could not
-read. It contains a single PowerShell script:
+Enumerating the SMB shares again lets us see that David has read access on `DEV`
+and `SYSVOL`.
 
 ```console
 ┌──(kali㉿kali)-[~/Desktop]
@@ -283,9 +271,8 @@ SMB         10.129.87.147   445    CICADA-DC        SYSVOL          READ        
 
 ![Shares readable by david.orelious](images/smb-shares-to-domain-admin/07-david-shares.png)
 
-`SYSVOL` should always be checked for Group Policy Preferences passwords
-(`cpassword`), so it gets mirrored as well. It only holds default policies
-here. The script on `DEV` is the useful find:
+While David can read `SYSVOL` too, a quick search through the cicada.htb folder does not reveal
+anything interesting beyond standard configuration files, so we move to the `DEV` share.
 
 ```console
 ┌──(kali㉿kali)-[~/Desktop]
@@ -312,8 +299,7 @@ getting file \Backup_script.ps1 of size 601 as Backup_script.ps1 (9.6 KiloBytes/
 
 ![Looting SYSVOL and downloading the backup script](images/smb-shares-to-domain-admin/08-dev-share-loot.png)
 
-The backup script runs as `emily.oscars` and builds its credential object from
-a plaintext password:
+The backup script leaks another cred, this time for Emily's account.
 
 ```powershell
 $sourceDirectory = "C:\smb"
@@ -331,8 +317,8 @@ Write-Host "Backup completed successfully. Backup file saved to: $backupFilePath
 
 ## 6. Foothold over WinRM
 
-`emily.oscars` is in *Remote Management Users*, so evil-winrm gives a shell
-and the user flag:
+Since Emily is part of the _Remote Management Users_ group, we can use her account
+to connect to port 5985 with `evil-winrm`.
 
 ```console
 ┌──(kali㉿kali)-[~/Desktop]
@@ -352,8 +338,8 @@ Info: Connection successful
 
 ## 7. Privilege escalation: SeBackupPrivilege
 
-The account is a member of **Backup Operators** and holds
-`SeBackupPrivilege` and `SeRestorePrivilege`, both enabled:
+This account has the `SeBackupPrivilege`. Which according to Microsoft:
+> allows file content retrieval, even if the security descriptor on the file might not grant such access
 
 ```console
 *Evil-WinRM* PS C:\Users\emily.oscars.CICADA\Desktop> whoami /priv
@@ -390,12 +376,13 @@ Mandatory Label\High Mandatory Level       Label            S-1-16-12288
 
 ![Privileges and group memberships of emily.oscars](images/smb-shares-to-domain-admin/10-privileges.png)
 
-`SeBackupPrivilege` allows reading any file regardless of its ACL, including
-the registry hives. `reg save` uses this privilege directly, so the `SAM` and
-`SYSTEM` hives can be dumped to disk. The `SYSTEM` hive holds the boot key
-that decrypts the hashes in `SAM`. Both hives go into one zip, and the zip is
-moved into the `DEV` share folder (`C:\shares\dev`) so it can be fetched over
-SMB:
+We can use the `SeBackupPrivilege` on Emily's account to dump registry hives.
+Two interesting hives are the `SYSTEM` and `SAM` hives. `SYSTEM` holds the boot
+key that can be used to decrypt `SAM`, which holds the account password
+hashes.
+
+We place the dumps in the `C:\shares\dev\` folder so that it is easy to pull
+them from Kali.
 
 ```console
 *Evil-WinRM* PS C:\Users\emily.oscars.CICADA\Desktop> mkdir C:\temp
@@ -429,15 +416,13 @@ Mode                 LastWriteTime         Length Name
 ![Saving the SAM and SYSTEM hives and staging them on the DEV share](images/smb-shares-to-domain-admin/11-hive-dump.png)
 
 {{< callout type="info" title="Why the zip and the share?" >}}
-evil-winrm's `download` command works, but it is slow for an 18 MB `SYSTEM`
-hive. Compressing the hives and fetching them over SMB with an account we
-already have is much faster.
+Zipping the hives makes it easier to download as evil-winrm's `download` command
+can be flaky on large files.
 {{< /callout >}}
 
 ## 8. Dumping the hashes offline
 
-Download the archive with `david.orelious`, unzip it, and let
-`impacket-secretsdump` decrypt the local SAM:
+Now we can extract the password hashes from the hives with impacket's secretsdump.
 
 ```console
 ┌──(kali㉿kali)-[~/Desktop]
@@ -470,13 +455,13 @@ DefaultAccount:503:<REDACTED_LM_HASH>:<REDACTED_NT_HASH>:::
 
 ![Retrieving the hives and running secretsdump](images/smb-shares-to-domain-admin/12-secretsdump.png)
 
-On a domain controller, the local SAM `Administrator` account is the Directory
-Services Restore Mode (DSRM) account. Its password often matches the domain
-Administrator password, and here the domain accepts its hash.
+On a domain controller, the local SAM `Administrator` often matches the domain
+Administrator password; therefore, they share the same hash.
 
 ## 9. Pass-the-hash to Administrator
 
-No cracking is needed. evil-winrm accepts the NT hash directly:
+We don't need to crack the hash. Active Directory accepts the hash,
+in what is called Pass-the-hash.
 
 ```console
 ┌──(kali㉿kali)-[~/Desktop]
